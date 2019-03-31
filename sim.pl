@@ -30,22 +30,25 @@ arg num_trials => (
     default => 1000,
 );
 
-# TODO permit specifying how the rolls are compared.
-opt rule => (
+opt player_wins => (
     isa => 'Str',
-    comment => 'Unused - currently the enemy wins if it rolls higher than the player; otherwise, the player wins.',
-    default => '',
+    alias => 'e',
+    comment => 'Perl code that gets rolls in $player and $enemy, and returns true if the player wins.  Wrap in a do {} if complex.',
+    default => '($player >= $enemy)',
 );
 
 my $args = optargs;
 
-# Criterion for whether the player won.  Currently the player wins if it rolls
-# equal to or higher than the enemy.  Called as
+# Criterion for whether the player won.  By default, the player wins on a roll
+# equal to or higher than the enemy's.  Called as
 # $did_player_win->($player_roll, $enemy_roll).
 
-my $did_player_win = sub {
-    $_[0] >= $_[1]
-};
+my $did_player_win = eval qq[
+    sub {
+        my (\$player, \$enemy) = \@_;
+        $args->{player_wins}
+    };
+] or die "Couldn't evaluate -e argument: $@";
 
 my $number_player_won = 0;
 
